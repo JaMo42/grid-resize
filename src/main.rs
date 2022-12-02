@@ -55,6 +55,9 @@ struct Args {
   /// X window.
   #[arg(long, default_value_t = {"configure".to_string ()})]
   method: String,
+  #[arg(long)]
+  /// Whether the right button should be considered pressed at startup
+  right_button_pressed: bool,
 }
 
 impl Args {
@@ -274,7 +277,7 @@ struct GridReize {
   target: Window,
   grid: Grid,
   selection: Selection,
-  left_button_held: bool,
+  right_button_held: bool,
   running: bool,
   color: RGB,
   last_box: ((u32, u32), (u32, u32)),
@@ -392,7 +395,7 @@ impl GridReize {
       target,
       grid: Grid::new (width, height, vertical_cells, horizontal_cells),
       selection: Selection::new (mouse_x - x, mouse_y - y),
-      left_button_held: false,
+      right_button_held: args.right_button_pressed,
       running: false,
       color: RGB::from_str (&args.color)?,
       last_box: ((0, 0), (0, 0)),
@@ -490,7 +493,7 @@ impl GridReize {
 
   fn button_press (&mut self, event: &XButtonEvent) {
     if event.button == Button3 {
-      self.left_button_held = true;
+      self.right_button_held = true;
       self.selection.p1_x = event.x;
       self.selection.p1_y = event.y;
     }
@@ -503,7 +506,7 @@ impl GridReize {
         self.finish ();
       }
       Button3 => {
-        self.left_button_held = false;
+        self.right_button_held = false;
       }
       _ => {}
     }
@@ -516,7 +519,7 @@ impl GridReize {
     self.last_motion = event.time;
     self.selection.p2_x = event.x;
     self.selection.p2_y = event.y;
-    if self.left_button_held {
+    if self.right_button_held {
       self.selection.p1_x = event.x;
       self.selection.p1_y = event.y;
     }

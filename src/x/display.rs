@@ -83,7 +83,6 @@ impl Display {
     }
   }
 
-
   pub fn query_pointer_position (&self) -> Option<(i32, i32)> {
     let mut x: c_int = 0;
     let mut y: c_int = 0;

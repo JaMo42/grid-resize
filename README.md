@@ -28,6 +28,8 @@ $ grid-resize <WINDOW> <DIMENSIONS> <CELLS> [OPTIONS]
 
 - `--method METHOD` one of `configure` (default), `message`, or `direct`.
 
+- `--right-button-pressed` Whether the right button should be considered pressed on startup.
+
 ### Methods
 
 The method defines how resizing is done:
