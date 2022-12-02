@@ -1,0 +1,11 @@
+[package]
+name = "grid-resize"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+x11 = "2.19.1"
+clap = { version = "4.0.23", features = ["derive"] }
+cairo-sys-rs = "0.15.1"
+cairo-rs = { version = "0.15.12", features = ["xlib"] }
+simple-error = "0.1.9"
