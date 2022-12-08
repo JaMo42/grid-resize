@@ -148,3 +148,31 @@ impl ToXDisplay for XDisplay {
     *self
   }
 }
+
+pub struct ScopedKeyboardGrab {
+  connection: XDisplay
+}
+
+impl ScopedKeyboardGrab {
+  pub fn grab (display: &Display, window: &Window) -> Self {
+    unsafe {
+      XGrabKeyboard (
+        display.as_raw (),
+        window.handle (),
+        False,
+        GrabModeAsync,
+        GrabModeAsync,
+        CurrentTime,
+      );
+    }
+    Self { connection: display.as_raw () }
+  }
+}
+
+impl Drop for ScopedKeyboardGrab {
+  fn drop (&mut self) {
+    unsafe {
+      XUngrabKeyboard (self.connection, CurrentTime);
+    }
+  }
+}

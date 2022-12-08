@@ -12,7 +12,7 @@ use clap::Parser;
 use x11::xlib::*;
 
 mod x;
-use x::{Display, Window, XDisplay, XWindow};
+use x::{Display, Window, XDisplay, XWindow, display::ScopedKeyboardGrab};
 
 type StdResult<T, E> = std::result::Result<T, E>;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -323,7 +323,7 @@ impl GridReize {
           .override_redirect (true)
           .background_pixel (0)
           .border_pixel (0)
-          .event_mask (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | KeyPressMask)
+          .event_mask (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
           .colormap (colormap)
           .save_under (true);
       })
@@ -407,6 +407,9 @@ impl GridReize {
 
   fn run (&mut self) -> Result<()> {
     self.window.map_raised ();
+    // Keyboard input while moving/resizing a window is weird so we joink the
+    // keyboard as long as we are running.
+    let _ketboard_grab = ScopedKeyboardGrab::grab (&self.display, &self.window);
     self.redraw ()?;
     let mut event: XEvent = unsafe { std::mem::zeroed () };
     self.running = true;
