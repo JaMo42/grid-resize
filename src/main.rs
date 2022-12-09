@@ -6,13 +6,13 @@ use std::{
   str::FromStr,
 };
 
-use cairo::{Context, Operator, Surface};
+use cairo::{Context, Operator, RadialGradient, Surface};
 use cairo_sys::cairo_xlib_surface_create;
 use clap::Parser;
 use x11::xlib::*;
 
 mod x;
-use x::{Display, Window, XDisplay, XWindow, display::ScopedKeyboardGrab};
+use x::{display::ScopedKeyboardGrab, Display, Window, XDisplay, XWindow};
 
 type StdResult<T, E> = std::result::Result<T, E>;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -264,6 +264,30 @@ fn correct_dimensions (
   (use_x, use_y, use_width, use_height)
 }
 
+fn rectangle_with_gradient (
+  context: &Context,
+  x: f64,
+  y: f64,
+  w: f64,
+  h: f64,
+  color: &RGB,
+) -> Result<()> {
+  let cx = x + w / 2.0;
+  let cy = y + h / 2.0;
+  // It seems like one cannot use transate/scale to create an elliptical
+  // gradient, so we just use a mix of the width and height for it's size
+  // as the next best choice.
+  let aspect = w / h;
+  let radius = (w / aspect + h * aspect) / 2.0;
+  let gradient = RadialGradient::new (cx, cy, 0.0, cx, cy, radius);
+  gradient.add_color_stop_rgba (0.0, color.red, color.green, color.blue, 0.2);
+  gradient.add_color_stop_rgba (1.0, color.red, color.green, color.blue, 0.8);
+  context.set_source (&gradient)?;
+  context.rectangle (x, y, w, h);
+  context.fill ()?;
+  Ok (())
+}
+
 struct GridReize {
   display: Display,
   window: Window,
@@ -447,29 +471,30 @@ impl GridReize {
     self.context.paint ()?;
     // Pending area
     {
-      self
-        .context
-        .set_source_rgba (self.color.red, self.color.green, self.color.blue, 0.3);
       let (x, y, w, h) = self.selection.get_dimensions (&self.grid);
-      self
-        .context
-        .rectangle (x as f64, y as f64, w as f64, h as f64);
-      self.context.fill ()?;
+      rectangle_with_gradient (
+        &self.context,
+        x as f64,
+        y as f64,
+        w as f64,
+        h as f64,
+        &self.color,
+      )?;
     }
     // Cell under mouse
     if let Some ((x, y)) = self.display.query_pointer_position () {
       let (x, y) = self.grid.lower_bound (x - self.x, y - self.y);
-      let color = RGB::lerp (&self.color, RGB::new (0.9, 0.9, 0.9), 0.5);
-      self
-        .context
-        .set_source_rgba (color.red, color.green, color.blue, 0.5);
-      self.context.rectangle (
+      let color = RGB::lerp (&self.color, RGB::new (0.9, 0.9, 0.9), 0.6);
+      self.context.set_operator (Operator::Over);
+      rectangle_with_gradient (
+        &self.context,
         (x * self.grid.cell_width) as f64,
         (y * self.grid.cell_height) as f64,
         self.grid.cell_width as f64,
         self.grid.cell_height as f64,
-      );
-      self.context.fill ()?;
+        &color
+      )?;
+      self.context.set_operator (Operator::Source);
     }
     // Lines
     {

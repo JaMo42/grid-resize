@@ -150,7 +150,7 @@ impl ToXDisplay for XDisplay {
 }
 
 pub struct ScopedKeyboardGrab {
-  connection: XDisplay
+  connection: XDisplay,
 }
 
 impl ScopedKeyboardGrab {
@@ -165,7 +165,9 @@ impl ScopedKeyboardGrab {
         CurrentTime,
       );
     }
-    Self { connection: display.as_raw () }
+    Self {
+      connection: display.as_raw (),
+    }
   }
 }
 
